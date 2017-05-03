@@ -38,7 +38,7 @@ static NSString* const kFoldingsColumnIdentifier  = @"foldings";
 }
 @end
 
-@interface OakDocumentView () <GutterViewDelegate, GutterViewColumnDataSource, GutterViewColumnDelegate, OTVStatusBarDelegate>
+@interface OakDocumentView () <GutterViewDelegate, GutterViewColumnDataSource, GutterViewColumnDelegate, OTVStatusBarDelegate, NSTouchBarDelegate>
 {
 	OBJC_WATCH_LEAKS(OakDocumentView);
 

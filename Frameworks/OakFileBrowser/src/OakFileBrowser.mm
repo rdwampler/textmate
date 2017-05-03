@@ -20,6 +20,7 @@
 #import <OakAppKit/OakOpenWithMenu.h>
 #import <OakAppKit/OakUIConstructionFunctions.h>
 #import <OakAppKit/OakZoomingIcon.h>
+#import <OakAppKit/NSImage Additions.h>
 #import <OakAppKit/NSMenuItem Additions.h>
 #import <OakSystem/application.h>
 #import <OakCommand/OakCommand.h>
@@ -34,6 +35,12 @@ OAK_DEBUG_VAR(FileBrowser_Controller);
 
 NSString* OakFileBrowserDidDuplicateURLs = @"OakFileBrowserDidDuplicateURLs";
 NSString* OakFileBrowserURLMapKey        = @"OakFileBrowserURLMapKey";
+
+NSTouchBarItemIdentifier const kOFBTouchBarIdentifierCustomization     = @"com.macromates.textmate.ofb.kCustomizationIdentifier";
+NSTouchBarItemIdentifier const kOFBTouchBarIdentifierBackForward = @"com.macromates.textmate.ofb.kBackForwardButton";
+NSTouchBarItemIdentifier const kOFBTouchBarIdentifierGoToFolder  = @"com.macromates.textmate.ofb.kGoToFolderButton";
+NSTouchBarItemIdentifier const kOFBTouchBarIdentifierNewFolder   = @"com.macromates.textmate.ofb.kNewFolder";
+NSTouchBarItemIdentifier const kOFBTouchBarIdentifierActionsView  = @"com.macromates.textmate.ofb.kFoldersSet";
 
 static NSString* DisplayName (NSURL* url, size_t numberOfParents = 0)
 {
@@ -105,7 +112,7 @@ static NSImage* IconImage (NSURL* url, NSSize size = NSMakeSize(16, 16))
 }
 @end
 
-@interface OakFileBrowser () <NSMenuDelegate>
+@interface OakFileBrowser () <NSMenuDelegate, NSTouchBarDelegate>
 {
 	OBJC_WATCH_LEAKS(OakFileBrowser);
 	OFBHeaderView* _headerView;
@@ -1229,6 +1236,98 @@ static bool is_binary (std::string const& path)
 {
 	if(NSURL* url = [sender representedObject])
 		[self goToURL:url];
+}
+
+// =============
+// = Touch Bar =
+// =============
+
+-(NSTouchBar*)makeTouchBar
+{
+	NSTouchBar* touchBar = [NSTouchBar new];
+	touchBar.delegate = self;
+	touchBar.defaultItemIdentifiers = @[ kOFBTouchBarIdentifierBackForward, NSTouchBarItemIdentifierFlexibleSpace, kOFBTouchBarIdentifierActionsView, NSTouchBarItemIdentifierFlexibleSpace, kOFBTouchBarIdentifierGoToFolder];
+	touchBar.customizationIdentifier = kOFBTouchBarIdentifierCustomization;
+	touchBar.customizationAllowedItemIdentifiers = @[ kOFBTouchBarIdentifierBackForward, kOFBTouchBarIdentifierGoToFolder, kOFBTouchBarIdentifierNewFolder, kOFBTouchBarIdentifierActionsView, NSTouchBarItemIdentifierFlexibleSpace ];
+
+	return touchBar;
+}
+
+- (NSTouchBarItem*)touchBar:(NSTouchBar*)touchBar makeItemForIdentifier:(NSTouchBarItemIdentifier)identifier
+{
+	if([identifier isEqualToString:kOFBTouchBarIdentifierBackForward])
+	{
+		NSSegmentedControl* backForwardButton = [NSSegmentedControl segmentedControlWithImages:@[ [NSImage imageNamed:NSImageNameTouchBarGoBackTemplate], [NSImage imageNamed:NSImageNameTouchBarGoForwardTemplate] ] trackingMode:NSSegmentSwitchTrackingMomentary target:self action:@selector(performTouchBarBackForward:)];
+		backForwardButton.segmentStyle = NSSegmentStyleSeparated;
+
+		NSCustomTouchBarItem* backForwardTouchBarItem = [[NSCustomTouchBarItem alloc] initWithIdentifier:kOFBTouchBarIdentifierBackForward];
+		backForwardTouchBarItem.view = backForwardButton;
+		backForwardTouchBarItem.customizationLabel = @"Back/Forward";
+
+		return backForwardTouchBarItem;
+	}
+
+	if([identifier isEqualToString:kOFBTouchBarIdentifierGoToFolder])
+	{
+		NSButton* goToFolderButton = [NSButton buttonWithTitle:@"Go to Folder…" target:self action:@selector(orderFrontGoToFolder:)];
+		NSCustomTouchBarItem* goToFolderTouchBarItem = [[NSCustomTouchBarItem alloc] initWithIdentifier:kOFBTouchBarIdentifierGoToFolder];
+		goToFolderTouchBarItem.view = goToFolderButton;
+		goToFolderTouchBarItem.customizationLabel = goToFolderButton.title;
+
+		return goToFolderTouchBarItem;
+	}
+
+	if([identifier isEqualToString:kOFBTouchBarIdentifierNewFolder])
+	{
+		NSButton* newFolderButton = [NSButton buttonWithImage:[NSImage imageNamed:NSImageNameTouchBarNewFolderTemplate] target:self action:@selector(newFolder:)];
+		NSCustomTouchBarItem* newFolderTouchBarItem = [[NSCustomTouchBarItem alloc] initWithIdentifier:kOFBTouchBarIdentifierNewFolder];
+		newFolderTouchBarItem.view = newFolderButton;
+		newFolderTouchBarItem.customizationLabel = @"New Folder";
+
+		return newFolderTouchBarItem;
+	}
+
+	if([identifier isEqualToString:kOFBTouchBarIdentifierActionsView])
+	{
+
+		NSImage* reloadImage = [NSImage imageNamed:NSImageNameTouchBarRefreshTemplate];
+		NSImage* searchImage = [NSImage imageNamed:NSImageNameTouchBarSearchTemplate];
+		searchImage.accessibilityDescription = @"search folder";
+		NSImage* favoritesImage = [NSImage imageNamed:@"FavoritesTemplate" inSameBundleAsClass:[self class]];
+		favoritesImage.accessibilityDescription = @"favorites";
+		NSImage* scmImage = [NSImage imageNamed:@"CopyAsPathnameTemplate" inSameBundleAsClass:[self class]];
+		scmImage.accessibilityDescription = @"source control status";
+
+		NSSegmentedControl* actionViewButton = [NSSegmentedControl segmentedControlWithImages:@[ reloadImage, searchImage, favoritesImage , scmImage ] trackingMode:NSSegmentSwitchTrackingMomentary target:self action:@selector(performTouchBarActionsView:)];
+		actionViewButton.segmentStyle = NSSegmentStyleSeparated;
+		NSCustomTouchBarItem* folderSetTouchBarItem = [[NSCustomTouchBarItem alloc] initWithIdentifier:kOFBTouchBarIdentifierActionsView];
+		folderSetTouchBarItem.view = actionViewButton;
+		folderSetTouchBarItem.customizationLabel = @"Actions View";
+
+		return folderSetTouchBarItem;
+	}
+
+	return nil;
+}
+
+- (void)performTouchBarBackForward:(id)sender
+{
+	if([sender selectedSegment] == 0)
+		[self goBack:self];
+	else if([sender selectedSegment] == 1)
+		[self goForward:self];
+}
+
+- (void)performTouchBarActionsView:(id)sender
+{
+	if([sender selectedSegment] == 0)
+		[self reload:self];
+	else if([sender selectedSegment] == 1)
+		[NSApp sendAction:@selector(orderFrontFindPanelForFileBrowser:) to:nil from:sender];
+	else if([sender selectedSegment] == 2)
+		[self goToFavorites:self];
+	else if([sender selectedSegment] == 3)
+		[self goToSCMDataSource:self];
 }
 
 // =========
