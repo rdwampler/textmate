@@ -9,6 +9,13 @@ namespace oak
 	uuid_t::uuid_t (CFUUIDBytes const& bytes) { uuid_copy(data, &bytes.byte0); }
 	uuid_t::uuid_t (::uuid_t const& uuid)     { uuid_copy(data, uuid); }
 
+	uuid_t& uuid_t::operator= (uuid_t const& rhs)
+	{
+		if (this != &rhs)
+			uuid_copy(data, rhs.data);
+		return *this;
+	}
+
 	uuid_t& uuid_t::generate ()
 	{
 		uuid_generate(data);

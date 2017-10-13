@@ -11,7 +11,11 @@ namespace scope
 	{
 		struct any_t
 		{
-			virtual ~any_t () { }
+			virtual ~any_t () = default;
+			any_t () = default;
+			any_t (any_t const&) = default;
+			any_t& operator= (any_t const&) = default;
+
 			virtual bool does_match (scope::scope_t const& lhs, scope::scope_t const& rhs, double* rank) const = 0;
 			virtual std::string to_s () const = 0;
 		};

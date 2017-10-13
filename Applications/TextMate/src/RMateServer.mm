@@ -237,7 +237,6 @@ struct record_t
 	WATCH_LEAKS(record_t);
 
 	record_t (std::string const& command) : command(command) { }
-	~record_t ()                                             { }
 
 	std::string command;
 	std::map<std::string, std::string> arguments;

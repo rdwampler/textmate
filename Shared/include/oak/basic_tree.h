@@ -20,6 +20,7 @@ namespace oak
 		{
 			value_type (_KeyT const& offset, _KeyT& key, _ValueT& value) : offset(offset), key(key), value(value) { }
 
+			value_type(value_type const&) = default;
 			value_type& operator= (value_type const& rhs)
 			{
 				this->~value_type();

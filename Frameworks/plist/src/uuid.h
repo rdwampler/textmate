@@ -14,6 +14,8 @@ namespace oak
 		uuid_t (::uuid_t const& uuid);
 		uuid_t (uuid_t const& rhs);
 
+		uuid_t& operator= (uuid_t const& rhs);
+
 		uuid_t& generate ();
 
 		bool operator< (uuid_t const& rhs) const;

@@ -50,6 +50,7 @@ public:
 		iterator& operator++ ()                     { ++_base; update_value(); return *this; }
 		size_t index () const                       { return _base != _tree.end() ? _base->offset.number_of_children : _tree.aggregated().number_of_children; }
 
+		iterator(iterator const&) = default;
 		iterator& operator= (iterator const& rhs)   { this->~iterator(); new(this) iterator(rhs); return *this; }
 
 		std::pair<ssize_t, _ValT> const* operator-> () const { return &_value; }

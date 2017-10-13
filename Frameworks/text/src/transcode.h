@@ -35,6 +35,9 @@ namespace text
 				perrorf("transcode_t: iconv_open(\"%s\", \"%s\")", toCharset.c_str(), fromCharset.c_str());
 		}
 
+		transcode_t(transcode_t&&) = default;
+		transcode_t& operator= (transcode_t&&) = default;
+
 		~transcode_t ()
 		{
 			ASSERT_EQ(_partial_sequence.size(), 0);
