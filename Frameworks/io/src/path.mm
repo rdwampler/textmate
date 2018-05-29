@@ -1,7 +1,7 @@
 #include "io.h"
 #include "intermediate.h"
 #include "entries.h"
-#include <OakFoundation/OakFoundation.h>
+#include <OakFoundation/NSString Additions.h>
 #include <oak/debug.h>
 #include <text/tokenize.h>
 #include <text/format.h>
@@ -878,7 +878,10 @@ namespace path
 
 	std::string move_to_trash (std::string const& path)
 	{
-		return OakMoveToTrash(path);
+		NSURL* resultingItemURL;
+		if([[NSFileManager defaultManager] trashItemAtURL:[NSURL fileURLWithPath:[NSString stringWithCxxString:path]] resultingItemURL:&resultingItemURL error:nil])
+				return cf::to_s((__bridge CFStringRef)[resultingItemURL path]);
+		else	return NULL_STR;
 	}
 
 	std::string duplicate (std::string const& src, std::string dst, bool overwrite)
