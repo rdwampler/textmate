@@ -106,6 +106,18 @@ OakRolloverButton* OakCreateCloseButton (NSString* accessibilityLabel)
 	return closeButton;
 }
 
+@interface NSColor (OakBackgroundFillViewAdditions)
++ (NSColor*)tmDarkDividerColor;
+@end
+
+@implementation NSColor (OakBackgroundFillViewAdditions)
++ (NSColor*)tmDarkDividerColor
+{
+	NSAppearanceName appearanceName = [[NSAppearance currentAppearance] bestMatchFromAppearancesWithNames:@[ NSAppearanceNameAqua, NSAppearanceNameDarkAqua ]];
+
+}
+@end
+
 // =========================
 // = OakBackgroundFillView =
 // =========================
@@ -255,6 +267,30 @@ OakRolloverButton* OakCreateCloseButton (NSString* accessibilityLabel)
 			self.inactiveBackgroundGradient = [[NSGradient alloc] initWithColorsAndLocations:[NSColor colorWithCalibratedWhite:1 alpha:0.68], 0.0, [NSColor colorWithCalibratedWhite:1 alpha:0.0416], 0.0416, [NSColor colorWithCalibratedWhite:1 alpha:0], 1.0, nil];
 		}
 	}
+
+	if(self.style == OakBackgroundFillViewStyleLightDivider)
+	{
+		// MAC_OS_X_VERSION_10_10
+		if([NSProcessInfo instancesRespondToSelector:@selector(isOperatingSystemAtLeastVersion:)] && [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:{ 10, 10, 0 }])
+		{
+			self.activeBackgroundColor = [NSColor separatorColor];
+		}
+		else
+		{
+			self.activeBackgroundColor   = [NSColor colorWithCalibratedWhite:0.500 alpha:1];
+			self.inactiveBackgroundColor = [NSColor colorWithCalibratedWhite:0.750 alpha:1];
+		}
+	}
+
+	if(self.style == OakBackgroundFillViewStyleDarkDivider)
+	{
+		self.activeBackgroundColor = [NSColor colorWithCalibratedWhite:0.13333 alpha:1];
+	}
+	else
+	{
+		self.activeBackgroundColor   = [NSColor colorWithCalibratedWhite:0.500 alpha:1];
+		self.inactiveBackgroundColor = [NSColor colorWithCalibratedWhite:0.750 alpha:1];
+	}
 }
 
 - (void)drawRect:(NSRect)aRect
@@ -305,6 +341,24 @@ OakBackgroundFillView* OakCreateHorizontalLine (NSColor* primaryColor, NSColor* 
 	view.activeBackgroundColor   = primaryColor;
 	view.inactiveBackgroundColor = secondaryColor;
 	[view addConstraint:[NSLayoutConstraint constraintWithItem:view attribute:NSLayoutAttributeHeight relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:1]];
+	view.translatesAutoresizingMaskIntoConstraints = NO;
+	return view;
+}
+
+OakBackgroundFillView* OakCreateHorizontalLine(OakBackgroundFillViewStyle style)
+{
+	OakBackgroundFillView* view = [[OakBackgroundFillView alloc] initWithFrame:NSZeroRect];
+	view.style = style;
+	[view addConstraint:[NSLayoutConstraint constraintWithItem:view attribute:NSLayoutAttributeHeight relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:1]];
+	view.translatesAutoresizingMaskIntoConstraints = NO;
+	return view;
+}
+
+OakBackgroundFillView* OakCreateVerticalLine(OakBackgroundFillViewStyle style)
+{
+	OakBackgroundFillView* view = [[OakBackgroundFillView alloc] initWithFrame:NSZeroRect];
+	view.style = style;
+	[view addConstraint:[NSLayoutConstraint constraintWithItem:view attribute:NSLayoutAttributeWidth relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1 constant:1]];
 	view.translatesAutoresizingMaskIntoConstraints = NO;
 	return view;
 }
